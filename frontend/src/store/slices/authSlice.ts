@@ -19,8 +19,8 @@ interface AuthState {
 
 const initialState: AuthState = {
   user: null,
-  token: Cookies.get('token') || null,
-  isAuthenticated: !!Cookies.get('token'),
+  token: null,
+  isAuthenticated: false,
   isLoading: false,
   error: null,
 };
@@ -41,7 +41,6 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      // Clear token from cookies
       Cookies.remove('token');
       return null;
     } catch (error: any) {

@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store/store';
-import { setToken, setUser } from '@/store/slices/authSlice';
+import { setToken, setUser, clearAuth } from '@/store/slices/authSlice';
 import { getCurrentUser } from '@/utils/userUtils';
 import Cookies from 'js-cookie';
 
@@ -23,10 +23,12 @@ function parseJwtToken(token: string) {
 
 interface AuthInitializerProps {
   children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
-export function AuthInitializer({ children }: AuthInitializerProps) {
+export function AuthInitializer({ children, fallback = null }: AuthInitializerProps) {
   const dispatch = useDispatch<AppDispatch>();
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     const initializeAuth = () => {
@@ -62,18 +64,28 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
           } else {
             console.log('Token exists but no user data found');
             Cookies.remove('token');
+            // Ensure Redux auth state reflects that there is no valid session
+            dispatch(clearAuth());
           }
         } else {
           console.log('No token found in cookies');
+          // Ensure we start from a clean unauthenticated state
+          dispatch(clearAuth());
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
         Cookies.remove('token');
+        dispatch(clearAuth());
       }
     };
 
     initializeAuth();
+    setInitialized(true);
   }, [dispatch]);
+
+  if (!initialized) {
+    return <>{fallback}</>;
+  }
 
   return <>{children}</>;
 }
