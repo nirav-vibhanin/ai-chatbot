@@ -62,6 +62,38 @@ export class MessageStorageService {
     }
   }
 
+  async getRecentMessages(user: IUser, limit: number = 20): Promise<IChatMessage[]> {
+    this.logger.log(`Fetching recent ${limit} messages for user: ${user.username}`);
+    try {
+      const messages = await this.chatModel
+        .find({ userId: user.id })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .exec();
+      const chatMessages = messages.reverse().map(msg => this.mapToChatMessage(msg));
+      return chatMessages;
+    } catch (error) {
+      this.logger.error(`Error fetching recent messages for user: ${user.username}`, error.stack);
+      throw error;
+    }
+  }
+
+  async getRecentMessagesByUserId(userId: string, limit: number = 20): Promise<IChatMessage[]> {
+    this.logger.log(`Fetching recent ${limit} messages for userId: ${userId}`);
+    try {
+      const messages = await this.chatModel
+        .find({ userId })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .exec();
+      const chatMessages = messages.reverse().map(msg => this.mapToChatMessage(msg));
+      return chatMessages;
+    } catch (error) {
+      this.logger.error(`Error fetching recent messages for userId: ${userId}`, error.stack);
+      throw error;
+    }
+  }
+
   private mapToChatMessage(chatDocument: ChatDocument): IChatMessage {
     return {
       id: chatDocument._id.toString(),

@@ -23,7 +23,8 @@ import {
   Login as LoginIcon,
   SmartToy as BotIcon
 } from '@mui/icons-material';
-import { login } from '@/store/slices/authSlice';
+import { setLoading, setToken, setUser } from '@/store/slices/authSlice';
+import { useLoginMutation } from '@/services/authApi';
 import { AppDispatch } from '@/store/store';
 
 const loginSchema = z.object({
@@ -37,6 +38,7 @@ export function LoginForm() {
   const dispatch = useDispatch<AppDispatch>();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const loginMutation = useLoginMutation();
 
   const {
     register,
@@ -49,9 +51,15 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setError('');
-      await dispatch(login(data)).unwrap();
+      dispatch(setLoading(true));
+      const res = await loginMutation.mutateAsync(data);
+      dispatch(setToken(res.access_token));
+      dispatch(setUser({ id: res.user.id, username: res.user.username, email: res.user.email }));
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please try again.');
+      setError(err?.response?.data?.message || 'Login failed. Please try again.');
+    }
+    finally {
+      dispatch(setLoading(false));
     }
   };
 

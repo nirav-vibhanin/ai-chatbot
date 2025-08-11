@@ -159,7 +159,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         
       await this.messageStorageService.saveUserMessage(mockUser, data.message);
 
-      const aiResponse = await this.aiService.generateResponse(data.message);
+      const aiResponse = await this.aiService.generateResponse(data.message, { userId });
       
       if (!aiResponse || aiResponse.trim() === '') {
         this.logger.error('Failed to generate AI response');
@@ -167,10 +167,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         return;
       }
 
-      // Save bot message to database
       await this.messageStorageService.saveBotMessage(mockUser, aiResponse);
 
-      // Stream the response
       await this.streamResponse(userId, {
         chunk: aiResponse,
         isComplete: true,
@@ -193,7 +191,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         return;
       }
 
-      // Emit to user-specific room
       this.server.to(userId).emit('stream-chunk', {
         ...streamData,
         timestamp: new Date().toISOString(),
@@ -203,7 +200,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     }
   }
 
-  // Method to send system messages to specific users
   sendSystemMessage(userId: string, message: string): void {
     try {
       this.server.to(userId).emit('system-message', {
@@ -216,7 +212,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     }
   }
 
-  // Method to broadcast to all connected users
   broadcastMessage(event: string, data: any): void {
     try {
       this.server.emit(event, {
@@ -228,7 +223,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     }
   }
 
-  // Method to send typing indicator
   sendTypingIndicator(userId: string, isTyping: boolean): void {
     try {
       this.server.to(userId).emit('typing', {
@@ -240,22 +234,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     }
   }
 
-  // Get connected users count
   getConnectedUsersCount(): number {
     return this.userSockets.size;
   }
 
-  // Get user socket if exists
   getUserSocket(userId: string): Socket | undefined {
     return this.userSockets.get(userId);
   }
 
-  // Get all connected user IDs
   getConnectedUserIds(): string[] {
     return Array.from(this.userSockets.keys());
   }
 
-  // Check if user is connected
   isUserConnected(userId: string): boolean {
     return this.userSockets.has(userId);
   }

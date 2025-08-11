@@ -1,4 +1,5 @@
 import { apiService } from './api';
+import { useMutation } from '@tanstack/react-query';
 
 export interface LoginCredentials {
   username: string;
@@ -29,3 +30,17 @@ export const authApi = {
     return response.data;
   },
 }; 
+
+export function useLoginMutation() {
+  return useMutation({
+    mutationKey: ['auth', 'login'],
+    mutationFn: authApi.login,
+  });
+}
+
+export function useLogoutMutation() {
+  return useMutation({
+    mutationKey: ['auth', 'logout'],
+    mutationFn: authApi.logout,
+  });
+}

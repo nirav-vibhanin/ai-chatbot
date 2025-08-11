@@ -2,16 +2,16 @@
 
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
 
 const ChatInterface = dynamic(() => import('./ChatInterface').then(mod => ({ default: mod.ChatInterface })), {
   ssr: false,
-  loading: () => <LoadingSpinner />
+  loading: () => <LoadingScreen />
 });
 
 export function ChatInterfaceWithSuspense() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<LoadingScreen />}>
       <ChatInterface />
     </Suspense>
   );

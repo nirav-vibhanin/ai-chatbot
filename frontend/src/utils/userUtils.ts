@@ -9,11 +9,19 @@ export function getUserFromCookies(): UserData | null {
     const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
     if (!token) return null;
 
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return null;
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    const payload = JSON.parse(jsonPayload);
+    const id = payload.sub || payload.id || payload.userId;
+    if (!id) return null;
     return {
-      id: payload.id || payload.userId,
-      email: payload.email,
-      name: payload.name,
+      id,
+      email: payload.email || '',
+      name: payload.username || payload.name,
     };
   } catch (error) {
     console.error('Error parsing user from cookies:', error);

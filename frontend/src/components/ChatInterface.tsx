@@ -13,11 +13,11 @@ import {
   Container,
 } from '@mui/material'
 import { Send, Logout } from '@mui/icons-material'
-import { logout } from '@/store/slices/authSlice'
-import { fetchChatHistory, sendMessage, addMessage, updateStreamingMessage, completeStreamingMessage } from '@/store/slices/chatSlice'
-import { chatApi } from '@/services/chatApi'
+import { clearAuth } from '@/store/slices/authSlice'
+import { setMessages, addMessage, updateStreamingMessage, completeStreamingMessage } from '@/store/slices/chatSlice'
+import { useChatHistoryQuery } from '@/services/chatApi'
 import { useSocket } from '@/hooks/useSocket'
-import MessageList from './MessageList'
+import { MessageList } from './MessageList'
 
 export default function ChatInterface() {
   const dispatch = useDispatch<AppDispatch>()
@@ -25,11 +25,15 @@ export default function ChatInterface() {
   const { messages, isLoading, isStreaming, currentStreamingMessage } = useSelector((state: RootState) => state.chat)
   const [message, setMessage] = useState('')
   const socket = useSocket() as any
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null) 
+
+  const { data: history, isFetching } = useChatHistoryQuery()
 
   useEffect(() => {
-    dispatch(fetchChatHistory())
-  }, [dispatch])
+    if (history) {
+      dispatch(setMessages(history))
+    }
+  }, [history, dispatch])
 
   useEffect(() => {
     if (socket && user) {
@@ -79,11 +83,10 @@ export default function ChatInterface() {
 
     dispatch(addMessage(userMessage))
     setMessage('')
-    dispatch(sendMessage(message.trim()))
   }
 
   const handleLogout = () => {
-    dispatch(logout())
+    dispatch(clearAuth())
     if (socket) {
       socket.disconnect()
     }

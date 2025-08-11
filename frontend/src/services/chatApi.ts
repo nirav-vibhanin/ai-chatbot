@@ -1,5 +1,6 @@
 import { apiService } from './api';
 import { ChatMessage } from '@/store/slices/chatSlice';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface SendMessageRequest {
   message: string;
@@ -36,3 +37,25 @@ export const chatApi = {
     return response.data;
   },
 }; 
+
+export function useChatHistoryQuery() {
+  return useQuery({
+    queryKey: ['chat', 'history'],
+    queryFn: chatApi.getChatHistory,
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useSendMessageMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ['chat', 'send'],
+    mutationFn: (message: string) => chatApi.sendMessage(message),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chat', 'history'] });
+    },
+  });
+}

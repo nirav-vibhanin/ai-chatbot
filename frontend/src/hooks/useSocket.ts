@@ -12,6 +12,7 @@ import { getCurrentUser, isUserAuthenticated, UserData } from '@/utils/userUtils
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
 
 let globalSocket: Socket | null = null;
+
 let globalSocketPromise: Promise<Socket> | null = null;
 
 export function useSocket() {
@@ -45,9 +46,6 @@ export function useSocket() {
   }, [reduxUser]);
 
   const connect = useCallback(async () => {
-    if (!currentUser?.id) {
-      return;
-    }
 
     if (socket?.connected) {
       return;
@@ -150,11 +148,9 @@ export function useSocket() {
       });
 
       newSocket.on('connected', (data) => {
-        // Connected to chat server
       });
 
       newSocket.on('joined', (data) => {
-        // Joined chat room
       });
 
       newSocket.on('stream-chunk', (data) => {

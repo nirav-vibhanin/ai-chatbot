@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   IconButton,
   Chip,
-  Fade
+  Fade,
+  Skeleton
 } from '@mui/material';
 import { 
   Refresh as RefreshIcon,
@@ -14,8 +15,9 @@ import {
   WifiOff as WifiOffIcon
 } from '@mui/icons-material';
 import { RootState, AppDispatch } from '@/store/store';
-import { fetchChatHistory, clearMessages, addMessage, resetLoading } from '@/store/slices/chatSlice';
-import { logout } from '@/store/slices/authSlice';
+import { setMessages, clearMessages, addMessage, resetLoading } from '@/store/slices/chatSlice';
+import { useChatHistoryQuery } from '@/services/chatApi';
+import { clearAuth } from '@/store/slices/authSlice';
 import { useSocket } from '@/hooks/useSocket';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
@@ -30,14 +32,35 @@ export function ChatInterface() {
   const { user } = useSelector((state: RootState) => state.auth);
   const { isConnected, isConnecting, isReconnecting, isInitializing, connectionError, reconnect, sendMessage: sendSocketMessage } = useSocket();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = useCallback((smooth: boolean) => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: smooth ? 'smooth' : 'auto',
+      });
+    } else if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
+    }
+  }, []);
+
+  const { data: history, isLoading: isHistoryLoading, isFetching: isHistoryFetching } = useChatHistoryQuery();
+  useEffect(() => {
+    if (history) {
+      dispatch(setMessages(history));
+      // Ensure we jump to the latest message after history loads
+      setTimeout(() => scrollToBottom(false), 0);
+    }
+  }, [history, dispatch, scrollToBottom]);
 
   useEffect(() => {
-    dispatch(fetchChatHistory());
-  }, [dispatch]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, currentStreamingMessage]);
+    // Smoothly follow new messages/streaming
+    if (!isHistoryLoading && !isHistoryFetching) {
+      scrollToBottom(true);
+    }
+  }, [messages, currentStreamingMessage, isHistoryLoading, isHistoryFetching, scrollToBottom]);
 
   useEffect(() => {
     return () => {
@@ -69,12 +92,8 @@ export function ChatInterface() {
   };
 
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(clearAuth());
   };
-
-
-
-
 
   return (
     <motion.div
@@ -116,12 +135,20 @@ export function ChatInterface() {
           className="flex-1 overflow-hidden relative"
         >
           <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 chat-scrollbar">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="text-gray-500">Loading messages...</div>
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 chat-scrollbar">
+              {isHistoryLoading || isHistoryFetching ? (
+                <div className="flex flex-col space-y-4">
+                  {[...Array(3)].map((_, idx) => (
+                    <div key={idx} className="flex items-start space-x-3 max-w-4xl">
+                      <Skeleton variant="circular" width={40} height={40} />
+                      <div className="flex-1 max-w-2xl">
+                        <Skeleton variant="rounded" height={24} className="mb-2" />
+                        <Skeleton variant="rounded" height={24} width="80%" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ) : messages && messages.length > 0 ? (
+               ) : messages && messages.length > 0 ? (
                 <AnimatePresence>
                   {messages.map((message, index) => (
                     <motion.div

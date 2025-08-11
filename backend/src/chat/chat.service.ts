@@ -28,7 +28,7 @@ export class ChatService {
       await this.messageStorageService.saveUserMessage(user, createChatDto.message);
 
       this.logger.log(`🤖 Generating AI response for user: ${user.username}`);
-      const aiResponse = await this.aiService.generateResponse(createChatDto.message);
+      const aiResponse = await this.aiService.generateResponse(createChatDto.message, { userId: user.id });
 
       if (!aiResponse || aiResponse.trim() === '') {
         throw new ChatMessageException('Failed to generate AI response');

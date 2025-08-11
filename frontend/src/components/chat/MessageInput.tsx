@@ -10,10 +10,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { 
-  Send as SendIcon,
-  AttachFile as AttachIcon,
-  EmojiEmotions as EmojiIcon,
-  Mic as MicIcon
+  Send as SendIcon
 } from '@mui/icons-material';
 
 interface MessageInputProps {
@@ -126,33 +123,6 @@ export function MessageInput({
         </div>
 
         <div className="flex items-center space-x-2">
-          <Tooltip title="Add emoji">
-            <IconButton
-              size="small"
-              className="text-gray-500 hover:text-gray-700 hover:bg-white/20"
-            >
-              <EmojiIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Attach file">
-            <IconButton
-              size="small"
-              className="text-gray-500 hover:text-gray-700 hover:bg-white/20"
-            >
-              <AttachIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Voice message">
-            <IconButton
-              size="small"
-              className="text-gray-500 hover:text-gray-700 hover:bg-white/20"
-            >
-              <MicIcon />
-            </IconButton>
-          </Tooltip>
-
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

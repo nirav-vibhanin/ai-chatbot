@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
 
 const ChatInterface = dynamic(() => import('./ChatInterface').then(mod => ({ default: mod.ChatInterface })), {
   ssr: false,
-  loading: () => <LoadingSpinner />
+  loading: () => <LoadingScreen />
 });
 
 export function ChatInterfaceWrapper() {
@@ -17,7 +17,7 @@ export function ChatInterfaceWrapper() {
   }, []);
 
   if (!isClient) {
-    return <LoadingSpinner />;
+    return <LoadingScreen />;
   }
 
   return <ChatInterface />;

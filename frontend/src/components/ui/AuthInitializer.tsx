@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store/store';
 import { setToken, setUser, clearAuth } from '@/store/slices/authSlice';
 import { getCurrentUser } from '@/utils/userUtils';
 import Cookies from 'js-cookie';
+import { chatApi } from '@/services/chatApi';
 
 function parseJwtToken(token: string) { 
   try {
@@ -29,6 +31,7 @@ interface AuthInitializerProps {
 export function AuthInitializer({ children, fallback = null }: AuthInitializerProps) {
   const dispatch = useDispatch<AppDispatch>();
   const [initialized, setInitialized] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const initializeAuth = () => {
@@ -39,37 +42,38 @@ export function AuthInitializer({ children, fallback = null }: AuthInitializerPr
           
           const tokenPayload = parseJwtToken(token);
           let user = null;
-          
-          if (tokenPayload && tokenPayload.id) {
-            user = {
-              id: tokenPayload.id || tokenPayload.userId,
-              email: tokenPayload.email || '',
-              name: tokenPayload.name || tokenPayload.username || '',
-            };
-            console.log('👤 Found user data from token:', user);
-          } else {
+
+          if (tokenPayload) {
+            const id = tokenPayload.sub || tokenPayload.id || tokenPayload.userId;
+            if (id) {
+              user = {
+                id,
+                email: tokenPayload.email || '',
+                name: tokenPayload.username || tokenPayload.name || '',
+              };
+              console.log('Found user data from token:', user);
+            }
+          }
+
+          if (!user) {
             user = getCurrentUser();
-            console.log('👤 Found user data from storage:', user);
+            console.log('Found user data from storage:', user);
           }
           
           if (user) {
             dispatch(setToken(token));
-            dispatch(setUser({
-              id: user.id,
-              username: user.name,
-              email: user.email,
-            }));
+            dispatch(setUser({ id: user.id, username: user.name || 'user', email: user.email }));
+            // Prefetch chat history to reduce first contentful render time
+            queryClient.prefetchQuery({ queryKey: ['chat', 'history'], queryFn: chatApi.getChatHistory });
             
             console.log('Auth state restored successfully');
           } else {
             console.log('Token exists but no user data found');
             Cookies.remove('token');
-            // Ensure Redux auth state reflects that there is no valid session
             dispatch(clearAuth());
           }
         } else {
           console.log('No token found in cookies');
-          // Ensure we start from a clean unauthenticated state
           dispatch(clearAuth());
         }
       } catch (error) {
@@ -81,7 +85,7 @@ export function AuthInitializer({ children, fallback = null }: AuthInitializerPr
 
     initializeAuth();
     setInitialized(true);
-  }, [dispatch]);
+  }, [dispatch, queryClient]);
 
   if (!initialized) {
     return <>{fallback}</>;

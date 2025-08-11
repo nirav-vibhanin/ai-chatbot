@@ -11,6 +11,7 @@ export const store = configureStore({
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
+      thunk: false,
       serializableCheck: {
         ignoredActions: ['persist/PERSIST'],
       },
